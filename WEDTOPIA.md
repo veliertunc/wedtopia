@@ -74,16 +74,33 @@ The starter hardcodes its OAuth production callback defaults and allows `expo://
 - A persistent text box during the session, manual model switching, recent conversation context and automatic provider fallback.
 - Live Google Places search on web and mobile when configured, plus area links and Uber ride handoff. The mobile Places tab uses the authenticated gateway and displays attribution.
 
+## Supplier marketplace
+
+The live marketplace is separate from the sample inspiration collection. Open `/weddings/marketplace` on the web, or **Browse supplier rentals** in Expo. Suppliers use the web **Supplier studio** to create a draft listing and explicitly publish or archive it. The database stores supplier-owned listings and daily reservation requests. Listings are supplier-entered, not independently verified.
+
+After applying the additive schema configuration, these gateway endpoints are available:
+
+- `GET marketplace?day=YYYY-MM-DD&city=Istanbul`: published listings with remaining confirmed inventory for that day. City is optional. Returns the latest 100 matches; no sample fallback.
+- `GET supplier`: the signed-in supplier's listings and incoming requests.
+- `POST listing`: create a draft or publish/archive an owned listing.
+- `GET bookings`: the signed-in renter's request history.
+- `POST reservation`: request one rental day and an integer quantity, with a client idempotency key.
+- `POST booking-decision`: suppliers confirm/decline pending requests; renters cancel pending requests.
+
+Request creation snapshots the rental title, business name, public contact details and price. The server calculates the total. Reusing a request key for different details returns a conflict. Pending requests do not reserve stock. Supplier confirmation runs in a database transaction, locks the listing first, and checks confirmed units for the requested day before changing status. Archiving removes a listing from discovery without deleting its reservation history. Details and stock are immutable after creation; suppliers can archive and create a replacement offer. Confirmed cancellations require direct supplier agreement and are not automated.
+
+No real listings are seeded or published during development. The marketplace needs the existing PostgreSQL and authentication configuration, but no paid external API to manage inventory. No payments are collected. Supplier verification, contracts, delivery, fitting appointments, deposits, refunds, tax, payouts and multi-day rentals remain outside this implementation. Database concurrency and authenticated write flows need testing against a configured development PostgreSQL instance.
+
 ## Boundaries before launch
 
-The catalog, prices and coordinates are illustrative; coordinates identify general areas, not verified suppliers. Remote Unsplash imagery is used as visual illustration. Real vendor onboarding, inventory/size calendars, confirmed reservations, deposits, cancellation policies, payment-provider financing, refunds, supplier payouts, and cross-device draft reconciliation need product-specific provider integrations. Sample requests are disabled by default. The application never claims a reservation or payment occurred.
+The inspiration catalog, prices and coordinates are illustrative; coordinates identify general areas, not verified suppliers. Remote Unsplash imagery is used as visual illustration. The supplier marketplace has separate persistent inventory and supplier-confirmed daily reservations. Vendor verification, deposits, cancellation policies, payment-provider financing, refunds, supplier payouts and cross-device draft reconciliation still need product-specific provider integrations. Sample requests are disabled by default. The application never claims a payment occurred.
 
 No keys, database URL or OAuth credentials are supplied. Offline draft planning works without those services; the original root layouts still require the starter environment to launch normally. Live integrations require account credentials and have not been verified against paid provider accounts.
 
 ## Checks
 
 ```powershell
-node --test tests/weddings.test.mjs tests/weddings-drafts.test.mjs
+node --test tests/weddings.test.mjs tests/weddings-drafts.test.mjs tests/weddings-marketplace.test.mjs
 node node_modules/typescript/bin/tsc --noEmit -p apps/nextjs/tsconfig.json
 node node_modules/typescript/bin/tsc --noEmit -p apps/tanstack-start/tsconfig.json
 node node_modules/typescript/bin/tsc --noEmit -p apps/expo/tsconfig.json
@@ -92,5 +109,7 @@ node node_modules/typescript/bin/tsc --noEmit -p apps/expo/tsconfig.json
 Run gateway generation once with the additive Vite configuration before checking its types. Node 22.21 supports TypeScript stripping for the domain tests.
 
 Tests cover installment rounding and precision limits, rental matching, draft restoration and Google Maps links. AI/Google paid calls, authenticated database writes, payment processing, native-device rendering and production builds require service configuration and were not exercised.
+
+The supplier-marketplace pass passed all three application TypeScript checks and 12 domain tests. Browser checks verified the rendered marketplace, required supplier fields and a phone-width layout without horizontal overflow. The gateway returned 400 for an invalid rental date and 401 for an unsigned supplier request after a clean restart. An earlier development restart failed in Nitro; no framework or dependency version was changed. Authenticated PostgreSQL writes and concurrent reservation confirmations remain untested until a development database and test accounts are configured.
 
 Official integration references: [TanStack server routes](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes), [OpenAI Responses](https://developers.openai.com/api/reference/responses/overview), [Anthropic Messages](https://platform.claude.com/docs/en/api/overview), [Google Places text search](https://developers.google.com/maps/documentation/places/web-service/text-search), [Uber deep links](https://developer.uber.com/docs/riders/ride-requests/tutorials/deep-links/introduction).

@@ -36,6 +36,7 @@ import {
   uberLink,
 } from "../../../../packages/api/src/weddings/domain";
 import WeddingAccount from "../components/wedding-account";
+import WeddingMarketplace from "../components/wedding-marketplace";
 import WeddingPlaces from "../components/wedding-places";
 
 const host = Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost";
@@ -258,6 +259,10 @@ export default function WeddingsScreen() {
         )}
         {tab === "Discover" && (
           <>
+            <Button
+              title="Browse supplier rentals"
+              onPress={() => setTab("Live rentals")}
+            />
             <View style={s.hero}>
               <Image
                 source={{ uri: photo("photo-1519741497674-611481863552", 900) }}
@@ -500,6 +505,16 @@ export default function WeddingsScreen() {
                   .catch((error) => setStatus((error as Error).message));
               }}
             />
+          </>
+        )}
+        {tab === "Live rentals" && (
+          <>
+            <Button
+              title="← Back to inspiration"
+              quiet
+              onPress={() => setTab("Discover")}
+            />
+            <WeddingMarketplace api={api} />
           </>
         )}
         {tab === "Places" && <WeddingPlaces api={api} city={plan.city} />}

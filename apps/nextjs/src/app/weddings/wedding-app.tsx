@@ -361,6 +361,7 @@ export default function WeddingApp() {
           wedtopia<span className="w-logo-dot">.</span>
         </a>
         <nav aria-label="Main navigation">
+          <a href="/weddings/marketplace">Supplier rentals</a>
           <a href="#discover" className="active">
             Discover rentals
           </a>
@@ -493,6 +494,9 @@ export default function WeddingApp() {
         <span className="w-demo-label">A curated sample collection</span>
       </section>
       <section className="w-discover" id="discover">
+        <a className="w-link" href="/weddings/marketplace">
+          Browse supplier rentals and availability →
+        </a>
         <div className="w-section-head">
           <div>
             <span className="w-eyebrow w-green">

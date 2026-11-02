@@ -15,12 +15,19 @@ async function proxy(
       "ai",
       "places",
       "transport",
+      "marketplace",
+      "supplier",
+      "bookings",
+      "listing",
+      "reservation",
+      "booking-decision",
     ].includes(path[0]!)
   )
     return Response.json({ error: "Not found" }, { status: 404 });
   try {
     const base = process.env.WEDDINGS_GATEWAY_URL ?? "http://localhost:3001";
     const url = new URL(`/api/weddings/${path[0]}`, base);
+    url.search = request.nextUrl.search;
     const response = await fetch(url, {
       method: request.method,
       headers: {
