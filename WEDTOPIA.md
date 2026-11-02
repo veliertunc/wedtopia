@@ -70,8 +70,9 @@ The starter hardcodes its OAuth production callback defaults and allows `expo://
 - Local wedding drafts, rental bundle selection and removal, budget tracking, deterministic city/capacity/budget matching, and a JSON export on web.
 - Exact-cent installment estimates for 1, 3, 6 or 12 payments. No financing or payment is executed.
 - Authenticated PostgreSQL plan storage and opt-in sample availability requests with server-calculated totals, validation and idempotency.
+- Web and mobile account panels reopen saved celebrations and show request history. Saving an opened plan updates that celebration after a gateway ownership check. A separate celebration can be started explicitly.
 - A persistent text box during the session, manual model switching, recent conversation context and automatic provider fallback.
-- Live Google Places search on web when configured, plus area links on web/mobile and Uber ride handoff.
+- Live Google Places search on web and mobile when configured, plus area links and Uber ride handoff. The mobile Places tab uses the authenticated gateway and displays attribution.
 
 ## Boundaries before launch
 
@@ -82,7 +83,7 @@ No keys, database URL or OAuth credentials are supplied. Offline draft planning 
 ## Checks
 
 ```powershell
-node --test tests/weddings.test.mjs
+node --test tests/weddings.test.mjs tests/weddings-drafts.test.mjs
 node node_modules/typescript/bin/tsc --noEmit -p apps/nextjs/tsconfig.json
 node node_modules/typescript/bin/tsc --noEmit -p apps/tanstack-start/tsconfig.json
 node node_modules/typescript/bin/tsc --noEmit -p apps/expo/tsconfig.json
@@ -90,6 +91,6 @@ node node_modules/typescript/bin/tsc --noEmit -p apps/expo/tsconfig.json
 
 Run gateway generation once with the additive Vite configuration before checking its types. Node 22.21 supports TypeScript stripping for the domain tests.
 
-Verified during implementation: all three application TypeScript checks, five domain tests, gateway catalog/model/protected responses, and the rendered web rental selection, matched bundle and assistant UI. AI/Google paid calls, authenticated database writes, payment processing, native-device rendering and production builds were not exercised.
+Tests cover installment rounding and precision limits, rental matching, draft restoration and Google Maps links. AI/Google paid calls, authenticated database writes, payment processing, native-device rendering and production builds require service configuration and were not exercised.
 
 Official integration references: [TanStack server routes](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes), [OpenAI Responses](https://developers.openai.com/api/reference/responses/overview), [Anthropic Messages](https://platform.claude.com/docs/en/api/overview), [Google Places text search](https://developers.google.com/maps/documentation/places/web-service/text-search), [Uber deep links](https://developer.uber.com/docs/riders/ride-requests/tutorials/deep-links/introduction).

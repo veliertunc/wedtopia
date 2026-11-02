@@ -29,11 +29,14 @@ import {
   mapsLink,
   money,
   photo,
+  readWeddingPlan,
   rentals,
   suggestBundle,
   totalFor,
   uberLink,
 } from "../../../../packages/api/src/weddings/domain";
+import WeddingAccount from "../components/wedding-account";
+import WeddingPlaces from "../components/wedding-places";
 
 const host = Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost";
 const gatewayUrl =
@@ -63,6 +66,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 }
 export default function WeddingsScreen() {
   const [plan, setPlan] = useState<WeddingPlan>(initialPlan);
+  const [cloudPlanId, setCloudPlanId] = useState<string>();
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState("Discover");
   const [category, setCategory] = useState<Category>("All rentals");
@@ -77,31 +81,16 @@ export default function WeddingsScreen() {
     { role: "user" | "assistant"; text: string }[]
   >([]);
   useEffect(() => {
-    const read =
+    const read = Promise.resolve().then(() =>
       Platform.OS === "web"
-        ? Promise.resolve(globalThis.localStorage?.getItem("wedtopia-mobile"))
-        : SecureStore.getItemAsync("wedtopia-mobile");
+        ? globalThis.localStorage?.getItem("wedtopia-mobile")
+        : SecureStore.getItemAsync("wedtopia-mobile"),
+    );
     void read
       .then((raw) => {
         if (raw) {
-          const value = JSON.parse(raw) as WeddingPlan;
-          if (
-            value &&
-            typeof value.names === "string" &&
-            typeof value.date === "string" &&
-            typeof value.guests === "number" &&
-            Number.isFinite(value.budget) &&
-            [1, 3, 6, 12].includes(value.months) &&
-            ["Istanbul", "Izmir"].includes(value.city) &&
-            Array.isArray(value.rentalIds)
-          )
-            setPlan({
-              ...initialPlan,
-              ...value,
-              rentalIds: value.rentalIds.filter((id) =>
-                rentals.some((r) => r.id === id),
-              ),
-            });
+          const value = readWeddingPlan(JSON.parse(raw));
+          if (value) setPlan(value);
         }
       })
       .catch(() => {})
@@ -218,6 +207,7 @@ export default function WeddingsScreen() {
   }) => (
     <Pressable
       accessibilityRole="button"
+      disabled={busy}
       onPress={onPress}
       style={[s.button, quiet && s.quiet]}
     >
@@ -242,7 +232,7 @@ export default function WeddingsScreen() {
           <Text style={s.small}>YOUR DAY, BEAUTIFULLY TOGETHER</Text>
         </View>
         <View style={s.tabs}>
-          {["Discover", "My wedding", "Wedding muse"].map((t) => (
+          {["Discover", "My wedding", "Places", "Wedding muse"].map((t) => (
             <Pressable
               key={t}
               accessibilityRole="tab"
@@ -470,8 +460,14 @@ export default function WeddingsScreen() {
               title="Save to account"
               onPress={() => {
                 setBusy(true);
-                void api("plans", plan)
-                  .then(() => setStatus("Plan saved to your account."))
+                void api<{ plan: { id: string } }>("plans", {
+                  ...plan,
+                  id: cloudPlanId,
+                })
+                  .then((result) => {
+                    setCloudPlanId(result.plan.id);
+                    setStatus("Plan saved to your account.");
+                  })
                   .catch((error) => setStatus((error as Error).message))
                   .finally(() => setBusy(false));
               }}
@@ -479,6 +475,21 @@ export default function WeddingsScreen() {
             <Button
               title="Request sample availability"
               onPress={() => void requestAvailability()}
+            />
+            <Button
+              quiet
+              title="Save next time as a new celebration"
+              onPress={() => {
+                setCloudPlanId(undefined);
+                setStatus("Your next save will create a separate celebration.");
+              }}
+            />
+            <WeddingAccount
+              api={api}
+              onOpen={(saved, id) => {
+                setPlan(saved);
+                setCloudPlanId(id);
+              }}
             />
             <Button
               quiet
@@ -491,6 +502,7 @@ export default function WeddingsScreen() {
             />
           </>
         )}
+        {tab === "Places" && <WeddingPlaces api={api} city={plan.city} />}
         {tab === "Wedding muse" && (
           <>
             <Text style={s.heading}>Let’s make it yours.</Text>

@@ -1427,3 +1427,54 @@
     transition: none !important;
   }
 }
+
+.w-account {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.w-account-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.w-account > p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 10px 0;
+}
+.w-account-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.w-account-item strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.w-account-item small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 5px;
+}
+.w-account-item .w-button {
+  padding: 10px 13px;
+  font-size: 10px !important;
+  white-space: normal;
+}
+@media (max-width: 500px) {
+  .w-account-head {
+    display: block;
+  }
+  .w-account-item {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}

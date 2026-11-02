@@ -181,6 +181,8 @@ export function totalFor(ids: string[]) {
 export function installments(total: number, months: number) {
   if (
     !Number.isSafeInteger(total) ||
+    !Number.isSafeInteger(total * 100) ||
+    !Number.isSafeInteger(total * 100) ||
     total < 0 ||
     ![1, 3, 6, 12].includes(months)
   )
@@ -224,4 +226,64 @@ export function uberLink(r: Rental, clientId?: string) {
   });
   if (clientId) query.set("client_id", clientId);
   return `https://m.uber.com/ul/?${query}`;
+}
+
+/** Validate persisted or imported data before letting it into either client. Past dates remain valid drafts. */
+export function readWeddingPlan(value: unknown): WeddingPlan | null {
+  if (!value || typeof value !== "object") return null;
+  const p = value as Record<string, unknown>;
+  if (
+    typeof p.names !== "string" ||
+    !p.names.trim() ||
+    p.names.length > 120 ||
+    typeof p.style !== "string" ||
+    p.style.length > 200 ||
+    typeof p.date !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(p.date) ||
+    !Number.isFinite(Date.parse(p.date)) ||
+    new Date(p.date).toISOString().slice(0, 10) !== p.date ||
+    !["Istanbul", "Izmir"].includes(p.city as string) ||
+    typeof p.guests !== "number" ||
+    !Number.isInteger(p.guests) ||
+    p.guests < 2 ||
+    p.guests > 2000 ||
+    typeof p.budget !== "number" ||
+    !Number.isSafeInteger(p.budget) ||
+    p.budget < 1000 ||
+    p.budget > 100000000 ||
+    ![1, 3, 6, 12].includes(p.months as number) ||
+    !Array.isArray(p.rentalIds) ||
+    p.rentalIds.length > 30 ||
+    p.rentalIds.some(
+      (id) => typeof id !== "string" || !rentals.some((r) => r.id === id),
+    ) ||
+    new Set(p.rentalIds).size !== p.rentalIds.length
+  )
+    return null;
+  return {
+    names: p.names.trim(),
+    date: p.date,
+    city: p.city as string,
+    guests: p.guests,
+    budget: p.budget,
+    style: p.style,
+    rentalIds: [...p.rentalIds] as string[],
+    months: p.months as number,
+  };
+}
+
+/** Only provider-generated Google Maps URLs may become clickable place links. */
+export function safePlaceUrl(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      ["maps.google.com", "www.google.com", "maps.app.goo.gl"].includes(
+        url.hostname,
+      )
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
 }

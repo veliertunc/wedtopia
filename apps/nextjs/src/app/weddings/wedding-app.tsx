@@ -14,11 +14,14 @@ import {
   mapsLink,
   money,
   photo,
+  readWeddingPlan,
   rentals,
+  safePlaceUrl,
   suggestBundle,
   totalFor,
   uberLink,
 } from "../../../../../packages/api/src/weddings/domain";
+import AccountPanel from "./account-panel";
 
 import "./weddings.css";
 
@@ -129,6 +132,7 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
 }
 export default function WeddingApp() {
   const [plan, setPlan] = useState<WeddingPlan>(initialPlan);
+  const [cloudPlanId, setCloudPlanId] = useState<string>();
   const [ready, setReady] = useState(false);
   const [category, setCategory] = useState<Category>("All rentals");
   const [search, setSearch] = useState("");
@@ -156,27 +160,10 @@ export default function WeddingApp() {
   const modalRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     try {
-      const stored = JSON.parse(
-        localStorage.getItem("wedtopia.plan.v1") ?? "null",
-      ) as Partial<WeddingPlan> | null;
-      if (
-        stored &&
-        typeof stored.names === "string" &&
-        typeof stored.date === "string" &&
-        typeof stored.budget === "number" &&
-        typeof stored.guests === "number" &&
-        typeof stored.style === "string" &&
-        ["Istanbul", "Izmir"].includes(stored.city ?? "") &&
-        [1, 3, 6, 12].includes(stored.months ?? 0) &&
-        Array.isArray(stored.rentalIds)
-      )
-        setPlan({
-          ...initialPlan,
-          ...stored,
-          rentalIds: stored.rentalIds.filter((id) =>
-            rentals.some((r) => r.id === id),
-          ),
-        });
+      const stored = readWeddingPlan(
+        JSON.parse(localStorage.getItem("wedtopia.plan.v1") ?? "null"),
+      );
+      if (stored) setPlan(stored);
       const saved = JSON.parse(
         localStorage.getItem("wedtopia.favorites.v1") ?? "[]",
       ) as unknown;
@@ -302,7 +289,11 @@ export default function WeddingApp() {
   async function saveCloud() {
     setBusy(true);
     try {
-      await api("plans", plan);
+      const result = await api<{ plan: { id: string } }>("plans", {
+        ...plan,
+        id: cloudPlanId,
+      });
+      setCloudPlanId(result.plan.id);
       setNotice("Your wedding plan is saved to your account.");
     } catch (error) {
       setNotice((error as Error).message);
@@ -934,14 +925,23 @@ export default function WeddingApp() {
                 Request availability
               </button>
             </div>
-            <a
+            <button
               className="w-link"
-              href="http://localhost:3001"
-              target="_blank"
-              rel="noreferrer"
+              disabled={busy}
+              onClick={() => {
+                setCloudPlanId(undefined);
+                setNotice("Your next save will create a separate celebration.");
+              }}
             >
-              Gateway sign-in (local development) ↗
-            </a>
+              Save next time as a new celebration
+            </button>
+            <AccountPanel
+              onOpen={(saved, id) => {
+                setPlan(saved);
+                setCloudPlanId(id);
+                setNotice("Your account plan is now open on this device.");
+              }}
+            />
           </>
         )}
         {dialog === "ai" && (
@@ -1067,7 +1067,7 @@ export default function WeddingApp() {
                 <article key={p.id}>
                   <h3>{p.displayName?.text}</h3>
                   <p>{p.formattedAddress}</p>
-                  {p.googleMapsUri && (
+                  {safePlaceUrl(p.googleMapsUri) && (
                     <a href={p.googleMapsUri} target="_blank" rel="noreferrer">
                       View on Google Maps ↗
                     </a>

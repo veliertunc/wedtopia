@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-import { and, eq, sql } from "@acme/db";
+import { and, desc, eq, sql } from "@acme/db";
 import { db } from "@acme/db/client";
 
 import {
@@ -179,7 +179,7 @@ export async function gateway(request: Request): Promise<Response> {
       throw new HttpError(404, "Endpoint not found");
     if (
       request.method !== "POST" &&
-      !(request.method === "GET" && action === "plans")
+      !(request.method === "GET" && ["plans", "requests"].includes(action))
     )
       throw new HttpError(405, "Method not allowed");
     if (request.method === "POST") {
@@ -201,11 +201,21 @@ export async function gateway(request: Request): Promise<Response> {
       );
     await limit(session.user.id, action, action === "ai" ? 8 : 30);
     if (request.method === "GET") {
+      if (action === "requests")
+        return json({
+          requests: await db
+            .select()
+            .from(weddingRequests)
+            .where(eq(weddingRequests.userId, session.user.id))
+            .orderBy(desc(weddingRequests.createdAt))
+            .limit(50),
+        });
       return json({
         plans: await db
           .select()
           .from(weddingPlans)
           .where(eq(weddingPlans.userId, session.user.id))
+          .orderBy(desc(weddingPlans.createdAt))
           .limit(50),
       });
     }
@@ -214,6 +224,25 @@ export async function gateway(request: Request): Promise<Response> {
     const body: unknown = JSON.parse(raw);
     if (action === "plans") {
       const plan = planSchema.parse(body);
+      const { id } = z.object({ id: z.uuid().optional() }).parse(body);
+      if (id) {
+        const [saved] = await db
+          .update(weddingPlans)
+          .set({ data: plan })
+          .where(
+            and(
+              eq(weddingPlans.id, id),
+              eq(weddingPlans.userId, session.user.id),
+            ),
+          )
+          .returning();
+        if (!saved)
+          throw new HttpError(
+            404,
+            "This saved wedding was not found in your account.",
+          );
+        return json({ plan: saved });
+      }
       const [saved] = await db
         .insert(weddingPlans)
         .values({ userId: session.user.id, data: plan })
