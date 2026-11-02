@@ -16,6 +16,7 @@ async function proxy(
       "places",
       "transport",
       "marketplace",
+      "readiness",
       "supplier",
       "bookings",
       "listing",

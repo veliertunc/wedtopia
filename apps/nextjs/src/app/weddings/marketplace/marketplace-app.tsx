@@ -2,19 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type {
-  LiveBooking,
-  LiveRental,
-} from "../../../../../../packages/api/src/weddings/marketplace";
+import type { LiveBooking, LiveRental } from "@acme/api/weddings/marketplace";
+import type { DatabaseReadiness } from "@acme/api/weddings/readiness";
+import { initialPlan, money } from "@acme/api/weddings/domain";
+import { bookingLabels, liveCategories } from "@acme/api/weddings/marketplace";
+
 import { authClient } from "~/auth/client";
-import {
-  initialPlan,
-  money,
-} from "../../../../../../packages/api/src/weddings/domain";
-import {
-  bookingLabels,
-  liveCategories,
-} from "../../../../../../packages/api/src/weddings/marketplace";
 
 import "../weddings.css";
 import "./marketplace.css";
@@ -49,6 +42,7 @@ export default function MarketplaceApp() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [service, setService] = useState<DatabaseReadiness | null>(null);
   const [draft, setDraft] = useState({
     title: "",
     businessName: "",
@@ -62,6 +56,31 @@ export default function MarketplaceApp() {
   });
   const requestKey = useRef("");
   const { data: session } = authClient.useSession();
+  async function checkService() {
+    try {
+      const response = await fetch("/api/weddings/readiness", {
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
+      });
+      const result = (await response.json()) as Partial<DatabaseReadiness>;
+      if (
+        typeof result.ready !== "boolean" ||
+        typeof result.message !== "string"
+      )
+        throw new Error("Unavailable");
+      setService(result as DatabaseReadiness);
+    } catch {
+      setService({
+        ready: false,
+        state: "unavailable",
+        message:
+          "The rental service is temporarily unavailable. You can still plan with the inspiration collection.",
+      });
+    }
+  }
+  useEffect(() => {
+    void checkService();
+  }, []);
   useEffect(() => {
     requestKey.current = "";
   }, [selected, day, quantity, note]);
@@ -302,6 +321,22 @@ export default function MarketplaceApp() {
               Sign in with Discord
             </button>
           </div>
+        )}
+        {service && !service.ready && (
+          <aside className="wm-status" role="status">
+            <p>{service.message}</p>
+            <div className="w-modal-actions">
+              <button
+                className="w-button w-outline"
+                onClick={() => void checkService()}
+              >
+                Try live service again
+              </button>
+              <a className="w-link" href="/weddings">
+                Continue with inspiration →
+              </a>
+            </div>
+          </aside>
         )}
         {status && (
           <p className="wm-status" role="status">

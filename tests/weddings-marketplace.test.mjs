@@ -5,7 +5,7 @@ import {
   availableUnits,
   bookingTotal,
   canTransition,
-} from "../packages/api/src/weddings/marketplace.ts";
+} from "@acme/api/weddings/marketplace";
 
 test("only pending rental requests can change state and only by the proper actor", () => {
   assert.equal(canTransition("pending", "confirmed", "supplier"), true);

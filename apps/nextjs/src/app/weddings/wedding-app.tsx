@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type {
-  Category,
-  Rental,
-  WeddingPlan,
-} from "../../../../../packages/api/src/weddings/domain";
+import type { Category, Rental, WeddingPlan } from "@acme/api/weddings/domain";
 import {
   categories,
   initialPlan,
@@ -20,7 +16,8 @@ import {
   suggestBundle,
   totalFor,
   uberLink,
-} from "../../../../../packages/api/src/weddings/domain";
+} from "@acme/api/weddings/domain";
+
 import AccountPanel from "./account-panel";
 
 import "./weddings.css";

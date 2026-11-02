@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { WeddingPlan } from "../../../../packages/api/src/weddings/domain";
+import type { WeddingPlan } from "@acme/api/weddings/domain";
 import type {
   AvailabilityRequest,
   SavedPlan,
-} from "../../../../packages/api/src/weddings/saved-plans";
-import {
-  money,
-  readWeddingPlan,
-} from "../../../../packages/api/src/weddings/domain";
+} from "@acme/api/weddings/saved-plans";
+import { money, readWeddingPlan } from "@acme/api/weddings/domain";
 
 export default function WeddingAccount({
   api,

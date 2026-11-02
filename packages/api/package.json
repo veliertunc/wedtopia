@@ -6,6 +6,26 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./src/index.ts"
+    },
+    "./weddings/domain": {
+      "types": "./dist/weddings/domain.d.ts",
+      "default": "./src/weddings/domain.ts"
+    },
+    "./weddings/marketplace": {
+      "types": "./dist/weddings/marketplace.d.ts",
+      "default": "./src/weddings/marketplace.ts"
+    },
+    "./weddings/readiness": {
+      "types": "./dist/weddings/readiness.d.ts",
+      "default": "./src/weddings/readiness.ts"
+    },
+    "./weddings/saved-plans": {
+      "types": "./dist/weddings/saved-plans.d.ts",
+      "default": "./src/weddings/saved-plans.ts"
+    },
+    "./weddings/service": {
+      "types": "./dist/weddings/service.d.ts",
+      "default": "./src/weddings/service.ts"
     }
   },
   "license": "MIT",

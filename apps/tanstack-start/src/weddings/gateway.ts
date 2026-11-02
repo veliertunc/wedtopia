@@ -1,22 +1,23 @@
 import { z } from "zod/v4";
 
-import { and, desc, eq, sql } from "@acme/db";
-import { db } from "@acme/db/client";
-
 import {
   initialPlan,
   rentals,
   totalFor,
   uberLink,
-} from "../../../../packages/api/src/weddings/domain";
-import { rentalListings } from "../../../../packages/db/src/wedding-marketplace";
+} from "@acme/api/weddings/domain";
+import { marketplace, MarketplaceError } from "@acme/api/weddings/service";
+import { and, desc, eq, sql } from "@acme/db";
+import { db } from "@acme/db/client";
+import { rentalListings } from "@acme/db/wedding-marketplace";
 import {
   weddingAiUsage,
   weddingPlans,
   weddingRequests,
-} from "../../../../packages/db/src/weddings";
+} from "@acme/db/weddings";
+
 import { auth } from "../auth/server";
-import { marketplace, MarketplaceError } from "./marketplace";
+import { weddingReadiness } from "./readiness";
 
 const planSchema = z.object({
   names: z.string().trim().min(1).max(120),
@@ -162,8 +163,12 @@ export async function gateway(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
     const action = url.pathname.replace(/^\/api\/weddings\/?/, "");
-    if (request.method === "GET" && action === "marketplace")
-      return await marketplace(action, null, null, url);
+    if (request.method === "GET" && action === "readiness")
+      return await weddingReadiness();
+    if (request.method === "GET" && action === "marketplace") {
+      const result = await marketplace(action, null, null, url);
+      return json(result.data, result.status);
+    }
     if (request.method === "GET" && action === "catalog")
       return json({ rentals, demo: true, currency: "TRY" });
     if (request.method === "GET" && action === "models")
@@ -222,8 +227,10 @@ export async function gateway(request: Request): Promise<Response> {
       );
     await limit(session.user.id, action, action === "ai" ? 8 : 30);
     if (request.method === "GET") {
-      if (marketActions.includes(action))
-        return await marketplace(action, session.user.id, null, url);
+      if (marketActions.includes(action)) {
+        const result = await marketplace(action, session.user.id, null, url);
+        return json(result.data, result.status);
+      }
       if (action === "requests")
         return json({
           requests: await db
@@ -248,7 +255,8 @@ export async function gateway(request: Request): Promise<Response> {
     if (marketActions.includes(action)) {
       if (["supplier", "bookings"].includes(action))
         throw new HttpError(405, "Method not allowed");
-      return await marketplace(action, session.user.id, body, url);
+      const result = await marketplace(action, session.user.id, body, url);
+      return json(result.data, result.status);
     }
     if (action === "plans") {
       const plan = planSchema.parse(body);

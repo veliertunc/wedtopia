@@ -8,8 +8,8 @@ import {
   View,
 } from "react-native";
 
-import type { PlaceResult } from "../../../../packages/api/src/weddings/saved-plans";
-import { safePlaceUrl } from "../../../../packages/api/src/weddings/domain";
+import type { PlaceResult } from "@acme/api/weddings/saved-plans";
+import { safePlaceUrl } from "@acme/api/weddings/domain";
 
 export default function WeddingPlaces({
   api,

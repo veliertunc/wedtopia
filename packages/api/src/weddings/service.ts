@@ -1,19 +1,16 @@
 import { z } from "zod/v4";
 
 import { and, desc, eq, inArray, sql } from "@acme/db";
-import { db } from "@acme/db/client";
+import { db as defaultDatabase } from "@acme/db/client";
+import { rentalBookings, rentalListings } from "@acme/db/wedding-marketplace";
 
-import type { BookingStatus } from "../../../../packages/api/src/weddings/marketplace";
+import type { BookingStatus } from "./marketplace";
 import {
   availableUnits,
   bookingTotal,
   canTransition,
   liveCategories,
-} from "../../../../packages/api/src/weddings/marketplace";
-import {
-  rentalBookings,
-  rentalListings,
-} from "../../../../packages/db/src/wedding-marketplace";
+} from "./marketplace";
 
 export class MarketplaceError extends Error {
   constructor(
@@ -29,8 +26,14 @@ const daySchema = z.iso
     (day) => day >= new Date().toISOString().slice(0, 10),
     "Choose today or a future date",
   );
-const reply = (data: unknown, status = 200) =>
-  Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
+export interface MarketplaceResult {
+  data: unknown;
+  status: number;
+}
+const reply = (data: unknown, status = 200): MarketplaceResult => ({
+  data,
+  status,
+});
 const publicFields = {
   id: rentalListings.id,
   title: rentalListings.title,
@@ -51,7 +54,9 @@ export async function marketplace(
   userId: string | null,
   body: unknown,
   url: URL,
-): Promise<Response> {
+  database: typeof defaultDatabase = defaultDatabase,
+): Promise<MarketplaceResult> {
+  const db = database;
   if (action === "marketplace") {
     const day = daySchema.parse(url.searchParams.get("day"));
     const city = z

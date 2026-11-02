@@ -1,15 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import type {
-  LiveBooking,
-  LiveRental,
-} from "../../../../packages/api/src/weddings/marketplace";
-import {
-  initialPlan,
-  money,
-} from "../../../../packages/api/src/weddings/domain";
-import { bookingLabels } from "../../../../packages/api/src/weddings/marketplace";
+import type { LiveBooking, LiveRental } from "@acme/api/weddings/marketplace";
+import { initialPlan, money } from "@acme/api/weddings/domain";
+import { bookingLabels } from "@acme/api/weddings/marketplace";
 
 export default function WeddingMarketplace({
   api,
@@ -26,7 +20,21 @@ export default function WeddingMarketplace({
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [service, setService] = useState<{
+    ready: boolean;
+    message: string;
+  } | null>(null);
   const key = useRef("");
+  async function checkService() {
+    try {
+      setService(await api<{ ready: boolean; message: string }>("readiness"));
+    } catch (error) {
+      setService({ ready: false, message: (error as Error).message });
+    }
+  }
+  useEffect(() => {
+    void checkService();
+  }, []);
   async function search() {
     if (busy) return;
     setBusy(true);
@@ -120,6 +128,18 @@ export default function WeddingMarketplace({
   return (
     <View>
       <Text style={s.heading}>Real connections.</Text>
+      {service && !service.ready && (
+        <View>
+          <Text style={s.status} accessibilityLiveRegion="polite">
+            {service.message}
+          </Text>
+          {button("Try live service again", () => void checkService())}
+          <Text style={s.text}>
+            You can keep planning with the inspiration collection while live
+            rentals are unavailable.
+          </Text>
+        </View>
+      )}
       <Text style={s.text}>
         Browse supplier-published rentals. Listings are supplier-entered and not
         independently verified. Sign in from My wedding to send requests.

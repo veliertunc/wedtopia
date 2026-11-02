@@ -9,7 +9,7 @@ import {
   suggestBundle,
   totalFor,
   uberLink,
-} from "../packages/api/src/weddings/domain.ts";
+} from "@acme/api/weddings/domain";
 
 test("installments conserve every cent, including non-divisible totals", () => {
   for (const total of [0, 1, 100001, 250000])

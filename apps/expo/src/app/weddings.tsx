@@ -18,10 +18,7 @@ import * as SecureStore from "expo-secure-store";
 import { expoClient } from "@better-auth/expo/client";
 import { createAuthClient } from "better-auth/react";
 
-import type {
-  Category,
-  WeddingPlan,
-} from "../../../../packages/api/src/weddings/domain";
+import type { Category, WeddingPlan } from "@acme/api/weddings/domain";
 import {
   categories,
   initialPlan,
@@ -34,7 +31,8 @@ import {
   suggestBundle,
   totalFor,
   uberLink,
-} from "../../../../packages/api/src/weddings/domain";
+} from "@acme/api/weddings/domain";
+
 import WeddingAccount from "../components/wedding-account";
 import WeddingMarketplace from "../components/wedding-marketplace";
 import WeddingPlaces from "../components/wedding-places";
@@ -61,8 +59,12 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  const result = (await response.json()) as T & { error?: string };
-  if (!response.ok) throw new Error(result.error ?? "Please try again.");
+  const result = (await response.json()) as T & {
+    error?: string;
+    message?: string;
+  };
+  if (!response.ok)
+    throw new Error(result.error ?? result.message ?? "Please try again.");
   return result;
 }
 export default function WeddingsScreen() {

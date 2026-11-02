@@ -6,7 +6,7 @@ import {
   installments,
   readWeddingPlan,
   safePlaceUrl,
-} from "../packages/api/src/weddings/domain.ts";
+} from "@acme/api/weddings/domain";
 
 test("persisted drafts are validated and copied before loading", () => {
   const value = {

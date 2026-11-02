@@ -2,16 +2,14 @@
 
 import { useState } from "react";
 
-import type { WeddingPlan } from "../../../../../packages/api/src/weddings/domain";
+import type { WeddingPlan } from "@acme/api/weddings/domain";
 import type {
   AvailabilityRequest,
   SavedPlan,
-} from "../../../../../packages/api/src/weddings/saved-plans";
+} from "@acme/api/weddings/saved-plans";
+import { money, readWeddingPlan } from "@acme/api/weddings/domain";
+
 import { authClient } from "~/auth/client";
-import {
-  money,
-  readWeddingPlan,
-} from "../../../../../packages/api/src/weddings/domain";
 
 export default function AccountPanel({
   onOpen,
